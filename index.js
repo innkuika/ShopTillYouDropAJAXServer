@@ -5,40 +5,122 @@ const fetch = require('node-fetch');
 const app = express();
 
 // app.set('trust proxy', true);
-getValidSchools();
+let options = [];
+(async () => {
+    options = await getValidSchools()
+    // listen for requests :)
+    const listener = app.listen(4000, () => {
+        console.log("The static server is listening on port " + listener.address().port);
+    });
+})()
 
-app.use(function(request, response, next) {
-  console.log("got request", request.url);
-  next();
+app.use(function (request, response, next) {
+    console.log("got request", request.url);
+    next();
 })
 
+app.get("/query/getOptions", function (request, response, next) {
+    console.log("sending options");
+    response.json(options);
+});
 
-app.use(function(request, response) {
-  response.status(404);
-  response.send("Cannot answer this request");
-})
-
-
-// listen for requests :)
-const listener = app.listen(3000, () => {
-  console.log("The static server is listening on port " + listener.address().port);
+app.get("/query/getPrice", async function (request, response, next) {
+    console.log("sending price");
+    const {id} = request.query
+    console.log("id ", id)
+    let prices = await getPrices(id)
+    response.json(prices);
 });
 
 
-function getValidSchools() {
-  const CSAPIKEY = process.env['CSAPIKEY']
-  let page = 0;
-  let validSchools = [] // [{name:schoolname, value=id}]
-  while (true) {
-    fetch(`https://api.data.gov/ed/collegescorecard/v1/schools.json?api_key=${CSAPIKEY}&fields=school.name,2018.cost.net_price.consumer.by_income_level.0-30000,2018.cost.net_price.consumer.by_income_level.30001-48000,2018.cost.net_price.consumer.by_income_level.48001-75000,2018.cost.net_price.consumer.by_income_level.75001-110000,2018.cost.net_price.consumer.by_income_level.110001-plus,id&per_page=100&page=${page}`)
-      .then(res => res.json())
-      .then(json => {
-        let result = json.results;
-        console.log(result[0])
-        for (let i = 0; i < result.length(); i++){
-          
-        }
-      });
-  }
+app.use(function (request, response) {
+    response.status(404);
+    response.send("Cannot answer this request");
+})
 
+
+function timer(ms) {
+    return new Promise(res => setTimeout(res, ms));
+}
+
+async function getPrices(id) {
+    // const CSAPIKEY = process.env['CSAPIKEY']
+    const CSAPIKEY = 'ze2yK4cctL8zzgnOXmBThvaXJda7wYfB44UWd4Vo';
+
+    while (true) {
+        let res = await fetch(`https://api.data.gov/ed/collegescorecard/v1/schools.json?api_key=${CSAPIKEY}&id=${id}&fields=school.name,2018.cost.net_price.consumer.by_income_level.0-30000,2018.cost.net_price.consumer.by_income_level.30001-48000,2018.cost.net_price.consumer.by_income_level.48001-75000,2018.cost.net_price.consumer.by_income_level.75000-plus,2018.cost.net_price.consumer.by_income_level.110001-plus,2018.cost.tuition.out_of_state,2018.cost.attendance.academic_year&page=0`)
+        if (!res.ok) {
+            console.log(res);
+            await timer(3000);
+        } else {
+            let json = await res.json();
+            let result = json['results'];
+            if(result.length === 0) {
+                continue
+            }
+            console.log(result)
+            const {
+                '2018.cost.net_price.consumer.by_income_level.0-30000': income_30k,
+                '2018.cost.net_price.consumer.by_income_level.30001-48000': income_48k,
+                '2018.cost.net_price.consumer.by_income_level.48001-75000': income_75k,
+                '2018.cost.net_price.consumer.by_income_level.75000-plus': income_110k,
+                '2018.cost.net_price.consumer.by_income_level.110001-plus': income_110k_plus,
+                '2018.cost.tuition.out_of_state': tuition,
+                '2018.cost.attendance.academic_year': total_price,
+                'school.name': school_name,
+            } = result[0]
+
+            return {
+                income_30k, income_48k, income_75k, income_110k, income_110k_plus, tuition, total_price, school_name
+            }
+        }
+    }
+}
+
+async function getValidSchools() {
+    // const CSAPIKEY = process.env['CSAPIKEY']
+    const CSAPIKEY = 'ze2yK4cctL8zzgnOXmBThvaXJda7wYfB44UWd4Vo';
+    let page = 0;
+
+    let validSchools = [] // [{name:schoolname, value=id}]
+    while (true) {
+        let res = await fetch(`https://api.data.gov/ed/collegescorecard/v1/schools.json?api_key=${CSAPIKEY}&school.state=CA&fields=school.name,2018.cost.net_price.consumer.by_income_level.0-30000,2018.cost.net_price.consumer.by_income_level.30001-48000,2018.cost.net_price.consumer.by_income_level.48001-75000,2018.cost.net_price.consumer.by_income_level.75000-plus,2018.cost.net_price.consumer.by_income_level.110001-plus,id,2018.cost.tuition.out_of_state,2018.cost.attendance.academic_year&per_page=100&page=${page}`)
+
+        if (!res.ok) {
+            console.log(res);
+            await timer(3000);
+            continue;
+        }
+        let json = await res.json();
+
+        let result = json['results'];
+        if (result.length === 0) {
+            break;
+        }
+        page++;
+        for (let i = 0; i < result.length; i++) {
+            console.log(result[i]);
+            const {
+                '2018.cost.net_price.consumer.by_income_level.0-30000': income_30k,
+                '2018.cost.net_price.consumer.by_income_level.30001-48000': income_48k,
+                '2018.cost.net_price.consumer.by_income_level.48001-75000': income_75k,
+                '2018.cost.net_price.consumer.by_income_level.75000-plus': income_110k,
+                '2018.cost.net_price.consumer.by_income_level.110001-plus': income_110k_plus,
+                '2018.cost.tuition.out_of_state': tuition,
+                '2018.cost.attendance.academic_year': total_price,
+                'school.name': school_name,
+                id: id
+            } = result[i]
+            // check if data is valid
+            if (income_30k && income_48k && income_75k && income_110k && income_110k_plus && tuition && total_price) {
+                validSchools.push({
+                    name: school_name,
+                    value: id
+                })
+            }
+        }
+        await timer(3000);
+    }
+
+    return validSchools
 }
