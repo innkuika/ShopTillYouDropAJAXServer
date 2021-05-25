@@ -25,11 +25,15 @@ app.get("/query/getOptions", function (request, response, next) {
 });
 
 app.get("/query/getPrice", async function (request, response, next) {
-    console.log("sending price details");
     const {id} = request.query
-    console.log("id ", id)
-    let prices = await getPrices(id)
-    response.json(prices);
+    console.log("sending price details of school with id: ", id)
+    try {
+        let prices = await getPrices(id);
+        response.json(prices);
+    } catch (e) {
+        // sends back empty object if anything went wrong
+        response.json({'status': 'error'});
+    }
 });
 
 
@@ -51,8 +55,8 @@ async function getPrices(id) {
     while (true) {
         let res = await fetch(`https://api.data.gov/ed/collegescorecard/v1/schools.json?api_key=${CSAPIKEY}&id=${id}&fields=school.name,2018.cost.net_price.consumer.by_income_level.0-30000,2018.cost.net_price.consumer.by_income_level.30001-48000,2018.cost.net_price.consumer.by_income_level.48001-75000,2018.cost.net_price.consumer.by_income_level.75000-plus,2018.cost.net_price.consumer.by_income_level.110001-plus,2018.cost.tuition.out_of_state,2018.cost.attendance.academic_year,school.city,school.state&page=0`)
         if (!res.ok) {
-            console.log(res);
-            await timer(3000);
+            console.log("something went wrong when fetching price from API ", res);
+            return {'status': 'error'}
         } else {
             let json = await res.json();
             let result = json['results'];
@@ -90,6 +94,7 @@ async function getPrices(id) {
 }
 
 async function getValidSchools() {
+
     // const CSAPIKEY = process.env['CSAPIKEY']
     const CSAPIKEY = 'G0Jgcw4uUqyURIXnCHCwQnKeO1Tv5pcLYLUb1Whx';
     // const CSAPIKEY = 'ze2yK4cctL8zzgnOXmBThvaXJda7wYfB44UWd4Vo';
