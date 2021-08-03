@@ -1,8 +1,10 @@
 // A static server using Node and Express
 const express = require("express");
 const fetch = require('node-fetch');
+const cors = require('cors')
 
 const app = express();
+app.use(cors())
 
 // app.set('trust proxy', true);
 let options = [];
