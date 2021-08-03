@@ -99,6 +99,7 @@ async function getPrices(id) {
 
 async function getValidSchools() {
     const CSAPIKEY = process.env['CSAPIKEY2']
+    console.log(`API key for getting valid schools is ${CSAPIKEY}`)
 
     let page = 0;
 
