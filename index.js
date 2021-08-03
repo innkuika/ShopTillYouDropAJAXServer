@@ -94,10 +94,7 @@ async function getPrices(id) {
 }
 
 async function getValidSchools() {
-
-    // const CSAPIKEY = process.env['CSAPIKEY']
-    const CSAPIKEY = 'G0Jgcw4uUqyURIXnCHCwQnKeO1Tv5pcLYLUb1Whx';
-    // const CSAPIKEY = 'ze2yK4cctL8zzgnOXmBThvaXJda7wYfB44UWd4Vo';
+    const CSAPIKEY = process.env['CSAPIKEY2']
 
     let page = 0;
 
