@@ -1,4 +1,5 @@
 // A static server using Node and Express
+require('dotenv').config()
 const express = require("express");
 const fetch = require('node-fetch');
 const cors = require('cors')
@@ -63,7 +64,6 @@ async function getPrices(id) {
             if (result.length === 0) {
                 continue
             }
-            console.log(result)
             const {
                 '2018.cost.net_price.consumer.by_income_level.0-30000': income_30k,
                 '2018.cost.net_price.consumer.by_income_level.30001-48000': income_48k,
@@ -103,7 +103,6 @@ async function getValidSchools() {
         let res = await fetch(`https://api.data.gov/ed/collegescorecard/v1/schools.json?api_key=${CSAPIKEY}&school.state=CA&fields=school.name,2018.cost.net_price.consumer.by_income_level.0-30000,2018.cost.net_price.consumer.by_income_level.30001-48000,2018.cost.net_price.consumer.by_income_level.48001-75000,2018.cost.net_price.consumer.by_income_level.75000-plus,2018.cost.net_price.consumer.by_income_level.110001-plus,id,2018.cost.tuition.out_of_state,2018.cost.attendance.academic_year,school.city,school.state&per_page=100&page=${page}`)
 
         if (!res.ok) {
-            console.log(res);
             await timer(3000);
             continue;
         }
@@ -115,7 +114,6 @@ async function getValidSchools() {
         }
         page++;
         for (let i = 0; i < result.length; i++) {
-            console.log(result[i]);
             const {
                 '2018.cost.net_price.consumer.by_income_level.0-30000': income_30k,
                 '2018.cost.net_price.consumer.by_income_level.30001-48000': income_48k,
